@@ -4,30 +4,30 @@ using UnityEngine;
 public class KleinBottleRenderer : MonoBehaviour
 {
     public Material material;
-   
+    
     void Start()
     {
-        List<Vector3> vertexData = new List<Vector3>();
-        List<int> triangles = new List<int>();
-        CreateKleinBottle(vertexData, triangles);
+        List<Vector3> vertexData = CreateVertices();
+        Vector4 lightData = new Vector4(1.0f, 1.0f, 0.0f, 30.0f);
+        Vector2 uvMode = new Vector2(0.0f, 0.0f); 
+        
+        CreateMesh(vertexData, lightData, uvMode);
     }
 
-    void CreateKleinBottle(List<Vector3> vertices, List<int> triangles)
+    List<Vector3> CreateVertices()
     {
-        // The number of vertices = (NU * NV) * 2 (because half of the bottle is drawn 2 times)
-        // the other half is mirrored and rotated 180 degrees along the Y axis
+        List<Vector3> vertices = new List<Vector3>();
+        int nu = 70; // points u
+        int nv = 30; // points v
         
-        int nu = 70; // Number of vertices of u
-        int nv = 30; // Number of vertices of v
-
-        // Generate vertices based on Klein bottle parametric equations
         for (int i = 0; i < nu; i++)
         {
             float u = 0.0f + (2.0f * Mathf.PI * i) / (nu - 1);
             for (int j = 0; j < nv; j++)
             {
-                float v = 0.0f + Mathf.PI * j / (nv - 1);
+                float v = 0.0f + (2.0f * Mathf.PI * j) / (nv - 1);
 
+                // Evaluate Klein bottle parametric equations
                 float x = 2.0f / 15.0f * (3.0f + 5.0f * Mathf.Cos(u) * Mathf.Sin(u)) * Mathf.Sin(v);
                 float y = -1.0f / 15.0f * Mathf.Sin(u) * (3.0f * Mathf.Cos(v) - 3.0f * Mathf.Pow(Mathf.Cos(u), 2) * Mathf.Cos(v) -
                                                           48.0f * Mathf.Pow(Mathf.Cos(u), 4) * Mathf.Cos(v) + 48.0f * Mathf.Pow(Mathf.Cos(u), 6) * Mathf.Cos(v) -
@@ -38,13 +38,21 @@ public class KleinBottleRenderer : MonoBehaviour
                 float z = -2.0f / 15.0f * Mathf.Cos(u) * (3.0f * Mathf.Cos(v) - 30.0f * Mathf.Sin(u) +
                                                           90.0f * Mathf.Pow(Mathf.Cos(u), 4) * Mathf.Sin(u) - 60.0f * Mathf.Pow(Mathf.Cos(u), 6) * Mathf.Sin(u) +
                                                           5.0f * Mathf.Cos(u) * Mathf.Cos(v) * Mathf.Sin(u));
-
-                // Add vertex to the list
+                // Add vertex to the list of vectors3
                 vertices.Add(new Vector3(x, y, z));
             }
         }
+        return vertices;
+    }
 
+    void CreateMesh(List<Vector3> vertices, Vector4 lightData, Vector2 uvMode)
+    {
+        Mesh mesh = new Mesh();
+        mesh.SetVertices(vertices);
         // Generate triangles
+        List<int> triangles = new List<int>();
+        int nu = 70; // points u
+        int nv = 30; // points v
         for (int i = 0; i < nu - 1; i++)
         {
             for (int j = 0; j < nv - 1; j++)
@@ -63,40 +71,8 @@ public class KleinBottleRenderer : MonoBehaviour
                 triangles.Add(nextIndex);
             }
         }
-
-        // Create mirrored version of the Klein bottle
-        List<Vector3> mirroredVertices = new List<Vector3>(vertices.Count);
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            Vector3 vertex = vertices[i];
-            mirroredVertices.Add(new Vector3(vertex.x, vertex.y, -vertex.z)); // Mirror along the z-axis
-        }
-
-        // Add the mirrored vertices to the existing list
-        int originalVertexCount = vertices.Count;
-        vertices.AddRange(mirroredVertices);
-
-        List<int> copiedTriangles = new List<int>(triangles);
-
-        foreach (int index in copiedTriangles) triangles.Add(index + originalVertexCount); // Add mirrored indices
-        
-        // Rotation axis (Y)
-        Vector3 rotationAxis = Vector3.up;
-
-        // Rotate 180 deg
-        for (int i = originalVertexCount; i < vertices.Count; i++)
-        {
-            Vector3 vertex = vertices[i];
-            vertices[i] = Quaternion.AngleAxis(180f, rotationAxis) * vertex;
-        }
-
-        // Combine vertices and triangles
-        Mesh mesh = new Mesh();
-        mesh.SetVertices(vertices);
         mesh.SetTriangles(triangles, 0);
         mesh.RecalculateNormals();
-
-        // Create GameObject and render
         GameObject meshObject = new GameObject("KleinBottleMesh");
         meshObject.AddComponent<MeshFilter>().mesh = mesh;
         meshObject.AddComponent<MeshRenderer>().material = material;

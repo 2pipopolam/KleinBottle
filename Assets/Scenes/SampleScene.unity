@@ -442,7 +442,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: e8dd9cd4e8fc0814a811b524c0a7dfd8, type: 2}
   uScale: 10
-  vScale: 0
+  vScale: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
